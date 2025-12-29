@@ -8,3 +8,4 @@ __pycache__/
 .pytest_cache/
 output/
 runs_map.html
+data/
