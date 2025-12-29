@@ -204,13 +204,23 @@ def cmd_fetch(args: argparse.Namespace, config: AppConfig) -> None:
 
 
 def cmd_export(args: argparse.Namespace, config: AppConfig) -> None:
-    """Export data to Hugo site."""
+    """Export data to Hugo site or custom output directory."""
     activities = load_strava_activities(config)
     workouts = load_lifting_workouts(config)
 
-    exporter = HugoExporter(config.paths.hugo_data_dir, config.paths.hugo_content_dir)
+    # Use custom output dir if specified, otherwise use Hugo data dir
+    if hasattr(args, "output") and args.output:
+        output_dir = Path(args.output)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        exporter = HugoExporter(output_dir, output_dir)
+        logger.info(f"Exporting to custom directory: {output_dir}")
+    else:
+        exporter = HugoExporter(
+            config.paths.hugo_data_dir, config.paths.hugo_content_dir
+        )
+        logger.info(f"Exporting to Hugo site: {config.paths.hugo_data_dir}")
+
     exporter.export_all(activities, workouts)
-    logger.info("Data exported to Hugo site")
 
 
 def cmd_analyze(args: argparse.Namespace, config: AppConfig) -> None:
@@ -297,7 +307,13 @@ def main() -> None:
     )
 
     # export command
-    subparsers.add_parser("export", help="Export data to Hugo site")
+    export_parser = subparsers.add_parser("export", help="Export data to Hugo site")
+    export_parser.add_argument(
+        "--output",
+        "-o",
+        type=str,
+        help="Custom output directory (default: Hugo data dir)",
+    )
 
     # analyze command
     subparsers.add_parser("analyze", help="Show workout summary")

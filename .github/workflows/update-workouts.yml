@@ -1,0 +1,59 @@
+name: Update Workout Data
+
+on:
+  # run daily at 6 AM UTC
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-and-export:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout fitness repo
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      
+      - name: Create .env file
+        run: |
+          echo "STRAVA_CLIENT_ID=${{ secrets.STRAVA_CLIENT_ID }}" >> .env
+          echo "STRAVA_CLIENT_SECRET=${{ secrets.STRAVA_CLIENT_SECRET }}" >> .env
+          echo "STRAVA_REFRESH_TOKEN=${{ secrets.STRAVA_REFRESH_TOKEN }}" >> .env
+      
+      - name: Fetch and process workout data
+        run: |
+          mkdir -p output
+          python run.py fetch
+          python run.py export --output ./output
+      
+      - name: Checkout site repo
+        uses: actions/checkout@v4
+        with:
+          repository: hz2/site
+          token: ${{ secrets.SITE_REPO_TOKEN }}
+          path: site-repo
+      
+      - name: Copy data files to site repo
+        run: cp output/*.json site-repo/data/
+          
+      - name: Commit and push to site repo
+        run: |
+          cd site-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/*.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update workout data from fitness repo"
+            git push
+          fi
