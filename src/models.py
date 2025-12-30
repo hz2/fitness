@@ -1,10 +1,4 @@
-"""
-Data models for workout analysis.
-
-Defines dataclasses representing workout data from various sources.
-These models provide type safety and clear data structures throughout
-the application.
-"""
+"""Data models for workout analysis."""
 
 from dataclasses import dataclass, field
 from datetime import datetime, date
@@ -24,15 +18,7 @@ class ActivityType(Enum):
 
     @classmethod
     def from_strava(cls, strava_type: str) -> "ActivityType":
-        """
-        Convert Strava activity type to internal type.
-
-        Parameters:
-            strava_type: The activity type string from Strava API.
-
-        Returns:
-            ActivityType: Corresponding internal activity type.
-        """
+        """Convert Strava activity type to internal type."""
         mapping = {
             "Run": cls.RUN,
             "TrailRun": cls.RUN,
@@ -66,12 +52,6 @@ class Exercise:
         Parse exercise from comma-separated string.
 
         Expected format: "name,weight,reps,rpe" where rpe is optional.
-
-        Parameters:
-            exercise_str: Comma-separated exercise data.
-
-        Returns:
-            Exercise if parsing succeeds, None otherwise.
         """
         if not exercise_str or not exercise_str.strip():
             return None
@@ -102,17 +82,7 @@ class CardioSession:
 
     @classmethod
     def from_string(cls, cardio_str: str) -> Optional["CardioSession"]:
-        """
-        Parse cardio session from comma-separated string.
-
-        Expected format: "type,distance_or_steps,duration"
-
-        Parameters:
-            cardio_str: Comma-separated cardio data.
-
-        Returns:
-            CardioSession if parsing succeeds, None otherwise.
-        """
+        """Parse cardio session from comma-separated string."""
         if not cardio_str or not cardio_str.strip():
             return None
 
@@ -202,12 +172,7 @@ class StravaActivity:
 
     @property
     def pace_per_mile(self) -> Optional[str]:
-        """
-        Calculate pace as min:sec per mile.
-
-        Returns:
-            Formatted pace string or None if distance is zero.
-        """
+        """Calculate pace as min:sec per mile."""
         if self.distance_miles == 0:
             return None
 
@@ -227,12 +192,6 @@ class StravaActivity:
     def from_strava_api(cls, data: dict) -> "StravaActivity":
         """
         Create StravaActivity from Strava API response.
-
-        Parameters:
-            data: Raw activity data from Strava API.
-
-        Returns:
-            StravaActivity: Parsed activity object.
         """
         return cls(
             id=data["id"],

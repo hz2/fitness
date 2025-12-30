@@ -1,9 +1,4 @@
-"""
-Main entry point for workout analysis.
-
-Provides CLI interface for fetching data from sources, running
-analysis, generating visualizations, and exporting to Hugo.
-"""
+"""Main entry point for workout analysis."""
 
 import sys
 import json
@@ -40,14 +35,6 @@ def load_strava_activities(
 ) -> List[StravaActivity]:
     """
     Load Strava activities, using cache if available.
-
-    Parameters:
-        config: Application configuration.
-        cache_path: Path to cache file.
-        force_refresh: Force fetch from API even if cache exists.
-
-    Returns:
-        List of Strava activities.
     """
     if cache_path is None:
         cache_path = config.paths.data_dir / "strava_activities.json"
@@ -80,12 +67,6 @@ def load_strava_activities(
 def _convert_cache_to_api(item: dict) -> dict:
     """
     Convert cached activity format back to API format for parsing.
-
-    Parameters:
-        item: Cached activity dictionary.
-
-    Returns:
-        Dictionary in Strava API format.
     """
     return {
         "id": item["id"],
@@ -112,14 +93,6 @@ def load_lifting_workouts(
 ) -> List[LiftingWorkout]:
     """
     Load lifting workouts from Google Sheets API or local TSV file.
-
-    Parameters:
-        config: Application configuration.
-        filepath: Path to workout file (fallback).
-        use_api: Whether to try Google Sheets API first.
-
-    Returns:
-        List of lifting workouts.
     """
     if filepath is None:
         filepath = config.paths.data_dir / "workouts.tsv"
@@ -147,10 +120,6 @@ def print_summary(
 ) -> None:
     """
     Print summary of all workout data.
-
-    Parameters:
-        activities: List of Strava activities.
-        workouts: List of lifting workouts.
     """
     print("\n" + "=" * 60)
     print("WORKOUT SUMMARY")

@@ -20,42 +20,20 @@ logger = logging.getLogger(__name__)
 
 
 class GoogleSheetsClient:
-    """
-    Client for fetching data from Google Sheets API.
-
-    Requires either:
-    - GOOGLE_SHEETS_CREDENTIALS env var (JSON string)
-    - credentials.json file in project root
-    """
+    """Client for fetching data from Google Sheets API."""
 
     SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
     def __init__(
         self, sheet_id: Optional[str] = None, range_name: Optional[str] = None
     ):
-        """
-        Initialize Google Sheets client.
-
-        Parameters:
-            sheet_id: Google Sheet ID (from URL). Can also be set via
-                      GOOGLE_SHEET_ID environment variable.
-            range_name: Sheet name or A1 range. Can also be set via
-                        GOOGLE_SHEET_RANGE environment variable.
-        """
+        """Initialize Google Sheets client."""
         self._sheet_id = sheet_id or os.getenv("GOOGLE_SHEET_ID")
         self._range_name = range_name or os.getenv("GOOGLE_SHEET_RANGE", "Sheet1")
         self._service = None
 
     def _get_credentials(self):
-        """
-        Get Google credentials from environment or file.
-
-        Returns:
-            Google credentials object.
-
-        Raises:
-            ValueError: If no credentials are available.
-        """
+        """Get Google credentials from environment or file."""
         try:
             from google.oauth2.service_account import Credentials
         except ImportError:
@@ -87,12 +65,7 @@ class GoogleSheetsClient:
         )
 
     def _get_service(self):
-        """
-        Get or create Google Sheets API service.
-
-        Returns:
-            Google Sheets API service object.
-        """
+        """Get or create Google Sheets API service."""
         if self._service is None:
             try:
                 from googleapiclient.discovery import build
@@ -110,20 +83,7 @@ class GoogleSheetsClient:
     def fetch_sheet_data(
         self, range_name: Optional[str] = None, sheet_id: Optional[str] = None
     ) -> List[List[str]]:
-        """
-        Fetch raw data from a Google Sheet.
-
-        Parameters:
-            range_name: Sheet name or A1 range notation (e.g., "Sheet1!A:Z").
-                        Defaults to GOOGLE_SHEET_RANGE env var or "Sheet1".
-            sheet_id: Override the default sheet ID.
-
-        Returns:
-            List of rows, where each row is a list of cell values.
-
-        Raises:
-            ValueError: If no sheet ID is configured.
-        """
+        """Fetch raw data from a Google Sheet."""
         sid = sheet_id or self._sheet_id
         rng = range_name or self._range_name
 
@@ -145,16 +105,7 @@ class GoogleSheetsClient:
     def fetch_workouts(
         self, range_name: Optional[str] = None, sheet_id: Optional[str] = None
     ) -> List[LiftingWorkout]:
-        """
-        Fetch and parse workout data from Google Sheets.
-
-        Parameters:
-            range_name: Sheet name or A1 range notation.
-            sheet_id: Override the default sheet ID.
-
-        Returns:
-            List of parsed LiftingWorkout objects.
-        """
+        """Fetch and parse workout data from Google Sheets."""
         rows = self.fetch_sheet_data(range_name, sheet_id)
         if not rows:
             logger.warning("No data found in Google Sheet")
@@ -168,12 +119,7 @@ class GoogleSheetsClient:
 
     @staticmethod
     def is_available() -> bool:
-        """
-        Check if Google Sheets API credentials are available.
-
-        Returns:
-            True if credentials are configured, False otherwise.
-        """
+        """Check if Google Sheets API credentials are available."""
         if os.getenv("GOOGLE_SHEETS_CREDENTIALS"):
             return True
         if Path("credentials.json").exists():
@@ -182,12 +128,7 @@ class GoogleSheetsClient:
 
 
 class GoogleSheetDataParser:
-    """
-    Parser for workout data fetched from Google Sheets API.
-
-    Uses the same parsing logic as WorkoutSheetParser but operates
-    on in-memory data rather than files.
-    """
+    """Parser for workout data fetched from Google Sheets API."""
 
     DATE_COLUMN = "date"
     MUSCLE_GROUP_COLUMN = "muscle group(s)"
@@ -198,12 +139,7 @@ class GoogleSheetDataParser:
     MEMO_COLUMN = "memo"
 
     def __init__(self, rows: List[List[str]]):
-        """
-        Initialize parser with row data.
-
-        Parameters:
-            rows: List of rows from Google Sheets API.
-        """
+        """Initialize parser with row data."""
         self._rows = rows
 
     def _parse_date(self, date_str: str) -> Optional[datetime]:
@@ -258,12 +194,7 @@ class GoogleSheetDataParser:
         return ""
 
     def parse(self) -> Iterator[LiftingWorkout]:
-        """
-        Parse workout data and yield LiftingWorkout objects.
-
-        Yields:
-            LiftingWorkout: Parsed workout data.
-        """
+        """Parse workout data and yield LiftingWorkout objects."""
         if not self._rows:
             return
 
@@ -323,12 +254,7 @@ class GoogleSheetDataParser:
 
 
 class WorkoutSheetParser:
-    """
-    Parser for workout data from TSV/CSV files exported from Google Sheets.
-
-    Handles the specific format of the workout tracking spreadsheet
-    with exercise columns in format: type,weight,reps,rpe
-    """
+    """Parser for workout data from TSV/CSV files."""
 
     # expected column names (case-insensitive matching)
     DATE_COLUMN = "date"
@@ -340,25 +266,12 @@ class WorkoutSheetParser:
     MEMO_COLUMN = "memo"
 
     def __init__(self, filepath: Path):
-        """
-        Initialize parser with file path.
-
-        Parameters:
-            filepath: Path to TSV or CSV file.
-        """
+        """Initialize parser with file path."""
         self._filepath = filepath
         self._delimiter = "\t" if filepath.suffix == ".tsv" else ","
 
     def _parse_date(self, date_str: str) -> Optional[datetime]:
-        """
-        Parse date string in various formats.
-
-        Parameters:
-            date_str: Date string to parse.
-
-        Returns:
-            datetime if parsing succeeds, None otherwise.
-        """
+        """Parse date string in various formats."""
         formats = [
             "%Y-%m-%d",
             "%m/%d/%Y",
@@ -378,12 +291,6 @@ class WorkoutSheetParser:
     def _find_exercise_columns(self, headers: List[str]) -> List[int]:
         """
         Find column indices for exercise data (E1, E2, etc.).
-
-        Parameters:
-            headers: List of column headers.
-
-        Returns:
-            List of column indices containing exercise data.
         """
         exercise_cols = []
         for i, header in enumerate(headers):
@@ -395,13 +302,6 @@ class WorkoutSheetParser:
     def _get_column_index(self, headers: List[str], name: str) -> Optional[int]:
         """
         Find column index by name (case-insensitive).
-
-        Parameters:
-            headers: List of column headers.
-            name: Column name to find.
-
-        Returns:
-            Column index if found, None otherwise.
         """
         name_lower = name.lower()
         for i, header in enumerate(headers):
@@ -428,15 +328,7 @@ class WorkoutSheetParser:
             return None
 
     def parse(self) -> Iterator[LiftingWorkout]:
-        """
-        Parse workout file and yield LiftingWorkout objects.
-
-        Yields:
-            LiftingWorkout: Parsed workout data.
-
-        Raises:
-            FileNotFoundError: If file does not exist.
-        """
+        """Parse workout file and yield LiftingWorkout objects."""
         if not self._filepath.exists():
             raise FileNotFoundError(f"Workout file not found: {self._filepath}")
 
@@ -515,15 +407,7 @@ class WorkoutSheetParser:
 
 
 def load_workouts_from_file(filepath: Path) -> List[LiftingWorkout]:
-    """
-    Load all workouts from a TSV/CSV file.
-
-    Parameters:
-        filepath: Path to workout data file.
-
-    Returns:
-        List of parsed LiftingWorkout objects.
-    """
+    """Load all workouts from a TSV/CSV file."""
     parser = WorkoutSheetParser(filepath)
     workouts = list(parser.parse())
     logger.info(f"Loaded {len(workouts)} workouts from {filepath}")
@@ -536,21 +420,7 @@ def load_workouts(
     sheet_id: Optional[str] = None,
     range_name: str = "Sheet1",
 ) -> List[LiftingWorkout]:
-    """
-    Load workouts from either Google Sheets API or local file.
-
-    Tries Google Sheets API first if use_api=True and credentials are available,
-    otherwise falls back to local file.
-
-    Parameters:
-        filepath: Path to local TSV/CSV file (fallback).
-        use_api: Whether to try Google Sheets API first.
-        sheet_id: Google Sheet ID (or use GOOGLE_SHEET_ID env var).
-        range_name: Sheet name or A1 range for API calls.
-
-    Returns:
-        List of parsed LiftingWorkout objects.
-    """
+    """Load workouts from either Google Sheets API or local file."""
     # try google sheets api if requested
     if use_api and GoogleSheetsClient.is_available():
         try:

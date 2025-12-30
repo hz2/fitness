@@ -1,9 +1,4 @@
-"""
-Strava API client for fetching activity data.
-
-Handles OAuth token refresh and provides methods for fetching
-activities, activity details, and route polylines.
-"""
+"""Strava API client for fetching activity data."""
 
 import json
 import logging
@@ -22,19 +17,11 @@ logger = logging.getLogger(__name__)
 
 
 class StravaClient:
-    """
-    Client for interacting with the Strava API.
-
-    Handles authentication and provides methods for fetching
-    athlete activities and detailed activity data.
-    """
+    """Client for interacting with the Strava API."""
 
     def __init__(self, config: StravaConfig):
         """
         Initialize Strava client with configuration.
-
-        Parameters:
-            config: Strava API configuration with credentials.
         """
         self._config = config
         self._access_token: Optional[str] = None
@@ -42,12 +29,6 @@ class StravaClient:
     def _refresh_access_token(self) -> str:
         """
         Refresh OAuth access token using refresh token.
-
-        Returns:
-            str: Fresh access token.
-
-        Raises:
-            requests.HTTPError: If token refresh fails.
         """
         response = requests.post(
             self._config.token_url,
@@ -69,9 +50,6 @@ class StravaClient:
     def access_token(self) -> str:
         """
         Get current access token, refreshing if needed.
-
-        Returns:
-            str: Valid access token.
         """
         if self._access_token is None:
             self._refresh_access_token()
@@ -84,16 +62,6 @@ class StravaClient:
     def fetch_activities_page(self, per_page: int = 100, page: int = 1) -> List[dict]:
         """
         Fetch a single page of activities.
-
-        Parameters:
-            per_page: Number of activities per page (max 200).
-            page: Page number to fetch.
-
-        Returns:
-            List of raw activity data dictionaries.
-
-        Raises:
-            requests.HTTPError: If API request fails.
         """
         response = requests.get(
             f"{self._config.api_base}/athlete/activities",
@@ -107,9 +75,6 @@ class StravaClient:
     def fetch_all_activities(self) -> Iterator[StravaActivity]:
         """
         Fetch all activities with automatic pagination.
-
-        Yields:
-            StravaActivity: Parsed activity objects.
         """
         page = 1
         while True:
@@ -132,15 +97,6 @@ class StravaClient:
         Fetch detailed data for a specific activity.
 
         Includes full polyline and other detailed metrics.
-
-        Parameters:
-            activity_id: Strava activity ID.
-
-        Returns:
-            dict: Full activity details from API.
-
-        Raises:
-            requests.HTTPError: If API request fails.
         """
         response = requests.get(
             f"{self._config.api_base}/activities/{activity_id}",
@@ -155,16 +111,6 @@ class StravaClient:
     ) -> dict:
         """
         Fetch time-series data streams for an activity.
-
-        Parameters:
-            activity_id: Strava activity ID.
-            keys: Stream types to fetch. Defaults to common streams.
-
-        Returns:
-            dict: Stream data keyed by type.
-
-        Raises:
-            requests.HTTPError: If API request fails.
         """
         if keys is None:
             keys = ["time", "distance", "heartrate", "cadence", "altitude"]
@@ -185,13 +131,6 @@ def run_oauth_flow(config: StravaConfig, port: int = 8000) -> Optional[str]:
 
     Starts a local server to capture the OAuth callback and
     exchanges the authorization code for tokens.
-
-    Parameters:
-        config: Strava configuration with client credentials.
-        port: Local port for callback server.
-
-    Returns:
-        str: New refresh token if successful, None otherwise.
     """
     auth_code: Optional[str] = None
 
@@ -261,13 +200,7 @@ def run_oauth_flow(config: StravaConfig, port: int = 8000) -> Optional[str]:
 
 
 def save_activities_to_json(activities: List[StravaActivity], filepath: Path) -> None:
-    """
-    Save activities to JSON file.
-
-    Parameters:
-        activities: List of activities to save.
-        filepath: Output file path.
-    """
+    """Save activities to JSON file."""
     data = []
     for activity in activities:
         data.append(

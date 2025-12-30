@@ -1,10 +1,4 @@
-"""
-Configuration management for workout analysis.
-
-Centralizes all configuration settings including API credentials,
-file paths, and application constants. Uses environment variables
-for sensitive data.
-"""
+"""Configuration management for workout analysis."""
 
 import os
 from pathlib import Path
@@ -33,12 +27,6 @@ class StravaConfig:
     def from_env(cls) -> "StravaConfig":
         """
         Create config from environment variables.
-
-        Returns:
-            StravaConfig: Configuration loaded from environment.
-
-        Raises:
-            ValueError: If required environment variables are missing.
         """
         client_id = os.getenv("STRAVA_CLIENT_ID")
         client_secret = os.getenv("STRAVA_CLIENT_SECRET")
@@ -72,9 +60,6 @@ class PathConfig:
     def default(cls) -> "PathConfig":
         """
         Create default path configuration.
-
-        Returns:
-            PathConfig: Default paths relative to project root.
         """
         base = Path(__file__).parent.parent
         return cls(
@@ -97,9 +82,6 @@ class AppConfig:
     def load(cls) -> "AppConfig":
         """
         Load full application configuration.
-
-        Returns:
-            AppConfig: Complete application configuration.
         """
         try:
             strava = StravaConfig.from_env()

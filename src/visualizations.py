@@ -1,9 +1,4 @@
-"""
-Workout data visualization.
-
-Provides functions for creating charts and maps from workout data.
-Uses matplotlib for static charts and folium for interactive maps.
-"""
+"""Workout data visualization."""
 
 import logging
 from pathlib import Path
@@ -40,11 +35,6 @@ def plot_weekly_mileage(
 ) -> None:
     """
     Plot weekly running mileage over time.
-
-    Parameters:
-        activities: List of Strava activities.
-        output_path: Optional path to save the figure.
-        show: Whether to display the plot.
     """
     data = calculate_weekly_mileage(activities)
 
@@ -90,11 +80,6 @@ def plot_pace_distribution(
 ) -> None:
     """
     Plot distribution of running paces.
-
-    Parameters:
-        activities: List of Strava activities.
-        output_path: Optional path to save the figure.
-        show: Whether to display the plot.
     """
     runs = [a for a in activities if a.activity_type == ActivityType.RUN]
     paces = [r.pace_seconds / 60 for r in runs if r.pace_seconds]
@@ -140,11 +125,6 @@ def plot_monthly_summary(
 ) -> None:
     """
     Plot monthly running summary with miles and run count.
-
-    Parameters:
-        activities: List of Strava activities.
-        output_path: Optional path to save the figure.
-        show: Whether to display the plot.
     """
     data = calculate_monthly_mileage(activities)
 
@@ -202,11 +182,6 @@ def plot_distance_vs_pace(
 ) -> None:
     """
     Scatter plot of distance vs pace colored by elevation.
-
-    Parameters:
-        activities: List of Strava activities.
-        output_path: Optional path to save the figure.
-        show: Whether to display the plot.
     """
     runs = [
         a for a in activities if a.activity_type == ActivityType.RUN and a.pace_seconds
@@ -251,11 +226,6 @@ def plot_weekly_lifting_volume(
 ) -> None:
     """
     Plot weekly lifting volume over time.
-
-    Parameters:
-        workouts: List of lifting workouts.
-        output_path: Optional path to save the figure.
-        show: Whether to display the plot.
     """
     data = calculate_weekly_volume(workouts)
 
@@ -297,11 +267,6 @@ def plot_workout_distribution(
 ) -> None:
     """
     Pie chart of workout distribution by muscle group.
-
-    Parameters:
-        workouts: List of lifting workouts.
-        output_path: Optional path to save the figure.
-        show: Whether to display the plot.
     """
     stats = calculate_lifting_stats(workouts)
 
@@ -338,15 +303,6 @@ def create_runs_map(
 ):
     """
     Create interactive map with recent run routes.
-
-    Parameters:
-        activities: List of Strava activities.
-        strava_client: Authenticated Strava client.
-        num_runs: Number of recent runs to include.
-        output_path: Optional path to save HTML map.
-
-    Returns:
-        folium.Map: Interactive map object.
     """
     try:
         import folium
