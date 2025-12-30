@@ -1,5 +1,28 @@
 [
   {
+    "id": 16878364295,
+    "name": "[afternoon] bethesda",
+    "type": "run",
+    "sport_type": "Run",
+    "date": "2025-12-29",
+    "start_time": "2025-12-29T16:43:08+00:00",
+    "distance_miles": 5.04,
+    "distance_meters": 8113.0,
+    "moving_time_seconds": 2929,
+    "moving_time_minutes": 48.81666666666667,
+    "elapsed_time_seconds": 2933,
+    "elevation_gain_feet": 257.9,
+    "elevation_gain_meters": 78.6,
+    "average_speed_mph": 6.2,
+    "max_speed_mph": 11.41,
+    "average_heartrate": null,
+    "max_heartrate": null,
+    "average_cadence": null,
+    "calories": null,
+    "suffer_score": null,
+    "pace_per_mile": "9:41"
+  },
+  {
     "id": 16857870671,
     "name": "[afternoon] bethesda",
     "type": "run",
