@@ -22,10 +22,6 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
-# =============================================================================
-# EXERCISE NAME NORMALIZATION
-# =============================================================================
-
 # Maps various exercise name variations to canonical names
 EXERCISE_ALIASES: Dict[str, str] = {
     # Bench Press variations
@@ -110,7 +106,12 @@ BIG_THREE_LIFTS = {
 # Accessory lifts to track separately
 ACCESSORY_LIFTS = {
     "db press": ["db press", "dumbbell press", "flat db press", "incline db press"],
-    "lat pulldown": ["lat pulldown", "lat pull down", "lat pull-down", "cable lat pulldown"],
+    "lat pulldown": [
+        "lat pulldown",
+        "lat pull down",
+        "lat pull-down",
+        "cable lat pulldown",
+    ],
     "pull-ups": ["pull-ups", "pullups", "pull ups", "chin-ups", "chinups", "chin ups"],
     "push-ups": ["push-ups", "pushups", "push ups"],
     "helms row": ["helms row", "helm row", "chest supported row"],
@@ -469,10 +470,8 @@ def calculate_key_lift_prs(workouts: List[LiftingWorkout]) -> List[Dict]:
         "endurance": (11, 20),
     }
 
-    # Track best for each exercise and rep range
     lift_records: Dict[str, Dict[str, Dict]] = defaultdict(dict)
 
-    # Also track recent performance (last 2 weeks)
     two_weeks_ago = datetime.now().date() - timedelta(days=14)
     recent_lifts: Dict[str, Dict] = {}
 
