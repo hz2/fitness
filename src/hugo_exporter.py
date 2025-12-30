@@ -34,6 +34,7 @@ from .analyzer import (
     calculate_advanced_running_stats,
     calculate_key_lift_prs,
     filter_cardio_workouts,
+    calculate_accessory_prs,
 )
 
 
@@ -211,6 +212,13 @@ class HugoExporter:
         data = calculate_key_lift_prs(lifting_workouts)
         self._write_json("key_lift_prs.json", data)
 
+    def export_accessory_prs(self, workouts: List[LiftingWorkout]) -> None:
+        """Export accessory lift PRs."""
+        lifting_workouts = filter_cardio_workouts(workouts)
+        data = calculate_accessory_prs(lifting_workouts)
+        self._write_json("accessory_prs.json", data)
+        logger.info("Exported accessory_prs.json")
+
     def export_running_prs(self, activities: List[StravaActivity]) -> None:
         """Export running personal records."""
         data = calculate_running_prs(activities)
@@ -271,6 +279,7 @@ class HugoExporter:
             self.export_volume_by_muscle(lifting_only)
             self.export_volume_trend(lifting_only)
             self.export_key_lift_prs(workouts)  # already filters internally
+            self.export_accessory_prs(workouts)  # already filters internally
             self.export_advanced_stats(workouts)  # already filters internally
 
         logger.info(f"Export complete. Data written to {self._data_dir}")

@@ -107,6 +107,15 @@ BIG_THREE_LIFTS = {
     "deadlift",
 }
 
+# Accessory lifts to track separately
+ACCESSORY_LIFTS = {
+    "db press": ["db press", "dumbbell press", "flat db press", "incline db press"],
+    "lat pulldown": ["lat pulldown", "lat pull down", "lat pull-down", "cable lat pulldown"],
+    "pull-ups": ["pull-ups", "pullups", "pull ups", "chin-ups", "chinups", "chin ups"],
+    "push-ups": ["push-ups", "pushups", "push ups"],
+    "helms row": ["helms row", "helm row", "chest supported row"],
+}
+
 
 def normalize_exercise_name(name: str) -> str:
     """Normalize exercise name to canonical form."""
@@ -607,29 +616,7 @@ def calculate_training_frequency(workouts: List[LiftingWorkout]) -> Dict:
 def calculate_strength_standards(
     workouts: List[LiftingWorkout], bodyweight: float = 180.0
 ) -> List[Dict]:
-    """Calculate strength relative to bodyweight for key lifts."""
-    # key compound lifts to track
-    key_lifts = [
-        "bench press",
-        "flat bb bench press",
-        "flat db press",
-        "db press",
-        "squat",
-        "hack squat",
-        "back squat",
-        "deadlift",
-        "romanian deadlift",
-        "rdl",
-        "overhead press",
-        "military press",
-        "shoulder press",
-        "db shoulder press",
-        "row",
-        "t-bar row",
-        "bb row",
-        "db row",
-    ]
-
+    """Calculate strength relative to bodyweight for the big 3 lifts."""
     # find max for each key lift pattern
     lift_maxes: Dict[str, Dict] = {}
 
@@ -637,7 +624,7 @@ def calculate_strength_standards(
         for exercise in workout.exercises:
             name_lower = exercise.name.lower().strip()
 
-            # categorize the lift
+            # categorize the lift - only big 3
             category = None
             if any(
                 k in name_lower for k in ["bench", "chest press", "db press", "flat db"]
@@ -647,12 +634,6 @@ def calculate_strength_standards(
                 category = "Squat"
             elif any(k in name_lower for k in ["deadlift", "rdl"]):
                 category = "Deadlift"
-            elif any(
-                k in name_lower for k in ["overhead", "military", "shoulder press"]
-            ):
-                category = "Overhead Press"
-            elif any(k in name_lower for k in ["row"]):
-                category = "Row"
 
             if category:
                 e1rm = calculate_estimated_1rm(exercise.weight_lbs, exercise.reps)
@@ -670,6 +651,75 @@ def calculate_strength_standards(
                     }
 
     return sorted(list(lift_maxes.values()), key=lambda x: x["bw_ratio"], reverse=True)
+
+
+def calculate_accessory_prs(workouts: List[LiftingWorkout]) -> List[Dict]:
+    """Calculate PRs for accessory lifts."""
+    lift_maxes: Dict[str, Dict] = {}
+
+    for workout in workouts:
+        # Check push-ups from dedicated column
+        if workout.pushups and workout.pushups > 0:
+            current = lift_maxes.get("push-ups")
+            if current is None or workout.pushups > current["reps"]:
+                lift_maxes["push-ups"] = {
+                    "lift": "push-ups",
+                    "exercise": "push-ups",
+                    "weight": 0.0,
+                    "reps": workout.pushups,
+                    "date": workout.date.isoformat(),
+                }
+
+        # Check pull-ups from dedicated column
+        if workout.pullups and workout.pullups > 0:
+            current = lift_maxes.get("pull-ups")
+            if current is None or workout.pullups > current["reps"]:
+                lift_maxes["pull-ups"] = {
+                    "lift": "pull-ups",
+                    "exercise": "pull-ups",
+                    "weight": 0.0,
+                    "reps": workout.pullups,
+                    "date": workout.date.isoformat(),
+                }
+
+        for exercise in workout.exercises:
+            name_lower = exercise.name.lower().strip()
+
+            # check against accessory lift patterns
+            category = None
+            for lift_name, patterns in ACCESSORY_LIFTS.items():
+                if any(p in name_lower for p in patterns):
+                    category = lift_name
+                    break
+
+            if category:
+                # for bodyweight exercises, track max reps
+                if category in ["pull-ups", "push-ups"]:
+                    current = lift_maxes.get(category)
+                    if current is None or exercise.reps > current["reps"]:
+                        lift_maxes[category] = {
+                            "lift": category,
+                            "exercise": exercise.name,
+                            "weight": exercise.weight_lbs,
+                            "reps": exercise.reps,
+                            "date": workout.date.isoformat(),
+                        }
+                else:
+                    # for weighted exercises, track by estimated 1RM
+                    e1rm = calculate_estimated_1rm(exercise.weight_lbs, exercise.reps)
+                    current = lift_maxes.get(category)
+
+                    if current is None or e1rm > current.get("estimated_1rm", 0):
+                        lift_maxes[category] = {
+                            "lift": category,
+                            "exercise": exercise.name,
+                            "weight": exercise.weight_lbs,
+                            "reps": exercise.reps,
+                            "estimated_1rm": round(e1rm, 1),
+                            "date": workout.date.isoformat(),
+                        }
+
+    return list(lift_maxes.values())
 
 
 def calculate_exercise_volume_trend(
