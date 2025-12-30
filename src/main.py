@@ -15,7 +15,7 @@ from typing import List, Optional
 from .config import AppConfig
 from .models import StravaActivity, LiftingWorkout
 from .strava_client import StravaClient, run_oauth_flow, save_activities_to_json
-from .sheets_client import load_workouts_from_file
+from .sheets_client import load_workouts_from_file, load_workouts, GoogleSheetsClient
 from .analyzer import calculate_running_stats, calculate_lifting_stats
 from .hugo_exporter import HugoExporter
 from .visualizations import (
@@ -108,14 +108,15 @@ def _convert_cache_to_api(item: dict) -> dict:
 
 
 def load_lifting_workouts(
-    config: AppConfig, filepath: Optional[Path] = None
+    config: AppConfig, filepath: Optional[Path] = None, use_api: bool = False
 ) -> List[LiftingWorkout]:
     """
-    Load lifting workouts from TSV file.
+    Load lifting workouts from Google Sheets API or local TSV file.
 
     Parameters:
         config: Application configuration.
-        filepath: Path to workout file.
+        filepath: Path to workout file (fallback).
+        use_api: Whether to try Google Sheets API first.
 
     Returns:
         List of lifting workouts.
@@ -123,8 +124,14 @@ def load_lifting_workouts(
     if filepath is None:
         filepath = config.paths.data_dir / "workouts.tsv"
 
+    # try google sheets api if requested
+    if use_api:
+        workouts = load_workouts(filepath=filepath, use_api=True)
+        if workouts:
+            return workouts
+
+    # fall back to local file
     if not filepath.exists():
-        # check parent directory
         alt_path = config.paths.base_dir / "workouts.tsv"
         if alt_path.exists():
             filepath = alt_path
@@ -202,11 +209,28 @@ def cmd_fetch(args: argparse.Namespace, config: AppConfig) -> None:
         load_strava_activities(config, force_refresh=True)
         logger.info("Strava data fetched and cached")
 
+    if args.source in ("sheets", "all"):
+        if GoogleSheetsClient.is_available():
+            workouts = load_lifting_workouts(config, use_api=True)
+            if workouts:
+                # save to local TSV as backup
+                logger.info(f"Fetched {len(workouts)} workouts from Google Sheets")
+            else:
+                logger.warning("No workouts fetched from Google Sheets")
+        else:
+            logger.warning(
+                "Google Sheets credentials not configured. "
+                "Set GOOGLE_SHEETS_CREDENTIALS and GOOGLE_SHEET_ID env vars."
+            )
+
 
 def cmd_export(args: argparse.Namespace, config: AppConfig) -> None:
     """Export data to Hugo site or custom output directory."""
     activities = load_strava_activities(config)
-    workouts = load_lifting_workouts(config)
+
+    # check if we should use google sheets api
+    use_sheets_api = hasattr(args, "sheets") and args.sheets
+    workouts = load_lifting_workouts(config, use_api=use_sheets_api)
 
     # Use custom output dir if specified, otherwise use Hugo data dir
     if hasattr(args, "output") and args.output:
@@ -301,9 +325,9 @@ def main() -> None:
     fetch_parser = subparsers.add_parser("fetch", help="Fetch data from sources")
     fetch_parser.add_argument(
         "--source",
-        choices=["strava", "all"],
+        choices=["strava", "sheets", "all"],
         default="all",
-        help="Data source to fetch",
+        help="Data source to fetch (strava, sheets, or all)",
     )
 
     # export command
@@ -313,6 +337,11 @@ def main() -> None:
         "-o",
         type=str,
         help="Custom output directory (default: Hugo data dir)",
+    )
+    export_parser.add_argument(
+        "--sheets",
+        action="store_true",
+        help="Fetch lifting data from Google Sheets API",
     )
 
     # analyze command

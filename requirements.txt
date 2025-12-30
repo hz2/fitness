@@ -8,6 +8,10 @@ seaborn>=0.12.0
 requests>=2.31.0
 python-dotenv>=1.0.0
 
+# google sheets api
+google-auth>=2.0.0
+google-api-python-client>=2.0.0
+
 # maps
 folium>=0.15.0
 polyline>=2.0.0

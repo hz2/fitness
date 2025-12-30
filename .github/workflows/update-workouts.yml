@@ -29,11 +29,24 @@ jobs:
           echo "STRAVA_CLIENT_SECRET=${{ secrets.STRAVA_CLIENT_SECRET }}" >> .env
           echo "STRAVA_REFRESH_TOKEN=${{ secrets.STRAVA_REFRESH_TOKEN }}" >> .env
       
-      - name: Fetch and process workout data
+      - name: Fetch Strava data
         run: |
           mkdir -p output
-          python run.py fetch
-          python run.py export --output ./output
+          python run.py fetch --source strava
+      
+      - name: Export workout data (with Google Sheets fallback)
+        env:
+          GOOGLE_SHEETS_CREDENTIALS: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+          GOOGLE_SHEET_RANGE: ${{ secrets.GOOGLE_SHEET_RANGE }}
+        run: |
+          # Try with Google Sheets first, fall back to local data
+          if python run.py export --output ./output --sheets; then
+            echo "Exported with Google Sheets data"
+          else
+            echo "Google Sheets failed, using local data"
+            python run.py export --output ./output
+          fi
       
       - name: Checkout site repo
         uses: actions/checkout@v4
