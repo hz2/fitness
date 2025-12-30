@@ -30,7 +30,9 @@ class GoogleSheetsClient:
 
     SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
-    def __init__(self, sheet_id: Optional[str] = None, range_name: Optional[str] = None):
+    def __init__(
+        self, sheet_id: Optional[str] = None, range_name: Optional[str] = None
+    ):
         """
         Initialize Google Sheets client.
 
@@ -124,7 +126,7 @@ class GoogleSheetsClient:
         """
         sid = sheet_id or self._sheet_id
         rng = range_name or self._range_name
-        
+
         if not sid:
             raise ValueError(
                 "No sheet ID provided. Set GOOGLE_SHEET_ID env var or pass sheet_id."
