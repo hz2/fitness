@@ -42,9 +42,9 @@ jobs:
         run: |
           # Try with Google Sheets first, fall back to local data
           if python run.py export --output ./output --sheets; then
-            echo "✅ Exported with Google Sheets data"
+            echo "Exported with Google Sheets data"
           else
-            echo "⚠️ Google Sheets failed, using local data"
+            echo "Google Sheets failed, using local data"
             python run.py export --output ./output
           fi
       
