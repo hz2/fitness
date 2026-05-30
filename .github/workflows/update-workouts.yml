@@ -1,7 +1,6 @@
 name: Update Workout Data
 
 on:
-  # run daily at 6 AM UTC
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:
@@ -9,64 +8,63 @@ on:
 jobs:
   update-and-export:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout fitness repo
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: pip install -r requirements.txt
-      
+
       - name: Create .env file
         run: |
           echo "STRAVA_CLIENT_ID=${{ secrets.STRAVA_CLIENT_ID }}" >> .env
           echo "STRAVA_CLIENT_SECRET=${{ secrets.STRAVA_CLIENT_SECRET }}" >> .env
           echo "STRAVA_REFRESH_TOKEN=${{ secrets.STRAVA_REFRESH_TOKEN }}" >> .env
-      
+
       - name: Fetch Strava data
         run: |
           mkdir -p output
           python run.py fetch --source strava
-      
-      - name: Export workout data (with Google Sheets fallback)
+
+      - name: Export workout data
         env:
           GOOGLE_SHEETS_CREDENTIALS: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
           GOOGLE_SHEET_RANGE: ${{ secrets.GOOGLE_SHEET_RANGE }}
         run: |
-          # Try with Google Sheets first, fall back to local data
           if python run.py export --output ./output --sheets; then
-            echo "Exported with Google Sheets data"
+            echo "exported with google sheets"
           else
-            echo "Google Sheets failed, using local data"
+            echo "google sheets unavailable, using local data"
             python run.py export --output ./output
           fi
-      
-      - name: Checkout site repo
+
+      - name: Checkout jsondev repo
         uses: actions/checkout@v4
         with:
-          repository: hz2/site
+          repository: hz2/jsondev
           token: ${{ secrets.SITE_REPO_TOKEN }}
-          path: site-repo
-      
-      - name: Copy data files to site repo
-        run: cp output/*.json site-repo/data/
-          
-      - name: Commit and push to site repo
+          path: jsondev-repo
+
+      - name: Copy data files to jsondev
+        run: cp output/*.json jsondev-repo/data/
+
+      - name: Commit and push to jsondev
         run: |
-          cd site-repo
+          cd jsondev-repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/*.json
           if git diff --staged --quiet; then
-            echo "No changes to commit"
+            echo "no changes"
           else
-            git commit -m "Update workout data from fitness repo"
+            git commit -m "chore: update workout data"
             git push
           fi
